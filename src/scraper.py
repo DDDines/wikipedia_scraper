@@ -17,9 +17,10 @@ class WikipediaScraper:
     def refresh_cookie(self) -> object:
         # Refresh the session cookie from the API to maintain a valid session.
         try:
+            # get cookies from the API
             conexao = requests.get(self.base_url+self.cookies_endpoint)
             return conexao.cookies
-            # try to get country from the API passing the cookies argument
+
         except requests.RequestException as error:
             print(f"Um erro ocorreu: {error}")
             return None
@@ -113,12 +114,14 @@ class WikipediaScraper:
             for leader in leaders:
                 leader_id = leader.get("id")
                 if not leader_id:
+                    # Generate a unique ID if not provided. Fistname-Lastname-birth_date
                     last_name = leader.get('last_name') or 'Unknown'
                     birth_date = leader.get('birth_date', 'UnknownDate')
                     leader_id = f"{leader['first_name']}-{last_name}-{birth_date}".replace(
                         ' ', '_').lower()
 
                 leader_data = {
+                    # get all the information about the leader
                     'id': leader.get('id'),
                     'first_name': leader.get('first_name'),
                     'last_name': leader.get('last_name'),
@@ -128,6 +131,7 @@ class WikipediaScraper:
                     'wikipedia_url': leader.get('wikipedia_url'),
                     'start_mandate': leader.get('start_mandate'),
                     'end_mandate': leader.get('end_mandate'),
+                    # iniciate the function get_first_paragraph that going to return the text screped from wikipedia
                     'first_paragraph': self.get_first_paragraph(leader.get('wikipedia_url'))
                 }
 
