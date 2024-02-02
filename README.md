@@ -49,10 +49,10 @@ The collected data is stored in a JSON file.
 
 Contributions are welcome! If you wish to enhance or add features to the project, follow these steps
 
-1- Fork the repository.
-2 - Create a new branch for your contribution: git checkout -b my-contribution
-3 - Make the necessary changes and clearly describe them.
-4 - Submit a pull request.
+    1- Fork the repository.
+    2 - Create a new branch for your contribution: git checkout -b my-contribution.
+    3 - Make the necessary changes and clearly describe them.
+    4 - Submit a pull request.
 
 ## Author
 
