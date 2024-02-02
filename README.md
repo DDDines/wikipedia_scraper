@@ -57,3 +57,5 @@ Contributions are welcome! If you wish to enhance or add features to the project
 ## Author
 
 Julio Cesar Barizon Montes
+
+![Meme](images/meme.webp)
