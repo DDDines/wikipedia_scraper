@@ -58,4 +58,4 @@ Contributions are welcome! If you wish to enhance or add features to the project
 
 Julio Cesar Barizon Montes
 
-![Meme](images/meme.webp)
+![Meme](images/meme_.webp)
