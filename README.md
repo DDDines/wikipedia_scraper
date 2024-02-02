@@ -21,7 +21,7 @@ You can install the required libraries with the following command:
 
         python main.py
 
-    This will initiate the scraper, which will gather information about country leaders and save the data to a JSON file named "data.json."
+This will initiate the scraper, which will gather information about country leaders and save the data to a JSON file named "data.json."
 
 ## Project Structure
 
