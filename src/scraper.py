@@ -2,6 +2,7 @@ import requests
 import json
 from bs4 import BeautifulSoup
 import re
+import pandas as pd
 
 
 class WikipediaScraper:
@@ -105,7 +106,6 @@ class WikipediaScraper:
         # Aggregate data for all leaders by refreshing the cookie, fetching countries, and then fetching leaders for each country.
         cookie = self.refresh_cookie()
         countries = self.get_countries(cookie)
-        data = {}
 
         for country in countries:
             cookie = self.refresh_cookie()
@@ -136,5 +136,10 @@ class WikipediaScraper:
                 }
 
                 self.leaders_data[leader_id] = leader_data
+        print(self.leaders_data)
+        return self.leaders_data
 
-        return data
+    def to_csv(self, data: dict):
+        self.data = data
+        dataframe = pd.DataFrame(self.data)
+        dataframe.to_csv('data.csv', index=False)

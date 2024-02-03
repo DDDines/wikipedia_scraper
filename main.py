@@ -14,7 +14,9 @@ if __name__ == "__main__":
 
     """
     scrapper = WikipediaScraper("https://country-leaders.onrender.com")
-    scrapper.get_everyone()
-    scrapper.to_json_file("data.json")
+    # scrapper.get_everyone()
+    # scrapper.to_json_file("data.json")
+    dicionario = scrapper.get_everyone()
+    scrapper.to_csv(dicionario)
 
     print("Finish!")
