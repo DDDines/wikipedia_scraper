@@ -75,29 +75,35 @@ class WikipediaScraper:
 
     def clean_paragraph(self, text: str) -> str:
         # Clean the scraped paragraph text from Wikipedia to remove references, symbols, and formatting issues.
+        try:
+            # Remove references like [1], [2], etc.
+            text = re.sub(r'\[\w+(\s\d+)?\]', '', text)
+            text = re.sub(r'»', '', text)  # Remove this symbol if present.
+            text = re.sub(r'—', '', text)  # Remove dashes.
+            text = re.sub(r'…', '', text)  # Remove ellipses.
+            text = re.sub(r' , ', ', ', text)  # Fix spacing around commas.
+            text = re.sub(r'ⓘ', '', text)  # Remove this symbol if present.
+            text = re.sub(r'"', '', text)  # Remove quotation marks.
 
-        # Remove references like [1], [2], etc.
-        text = re.sub(r'\[\w+(\s\d+)?\]', '', text)
-        text = re.sub(r'»', '', text)  # Remove this symbol if present.
-        text = re.sub(r'—', '', text)  # Remove dashes.
-        text = re.sub(r'…', '', text)  # Remove ellipses.
-        text = re.sub(r' , ', ', ', text)  # Fix spacing around commas.
-        text = re.sub(r'ⓘ', '', text)  # Remove this symbol if present.
-        text = re.sub(r'"', '', text)  # Remove quotation marks.
+            # Remove any characters enclosed in parentheses
+            text = re.sub(r'\([^)]*\)', '', text)
 
-        # Remove any characters enclosed in parentheses
-        text = re.sub(r'\([^)]*\)', '', text)
+            # Replace  spaces for one space
+            text = re.sub(r'\s+', ' ', text).strip()
 
-        # Replace  spaces for one space
-        text = re.sub(r'\s+', ' ', text).strip()
+            return text
 
-        return text
+        except requests.RequestException as error:
+            print(f"Um erro ocorreu: {error}")
+            return None
 
-    def to_json_file(self, filepath: str) -> None:
+    def to_json_file(self, data: dict, filepath='data.json') -> None:
         # Save the collected leaders' data to a JSON file.
         try:
-            with open(filepath, 'w') as file:
-                json.dump(self.leaders_data, file)
+            self.data = data
+            self.filepath = filepath
+            with open(self.filepath, 'w') as file:
+                json.dump(self.data, file)
 
         except requests.RequestException as error:
             print(f"Um erro ocorreu: {error}")
@@ -105,84 +111,103 @@ class WikipediaScraper:
 
     def get_everyone(self) -> dict:
         # Aggregate data for all leaders by refreshing the cookie, fetching countries, and then fetching leaders for each country.
-        cookie = self.refresh_cookie()
-        countries = self.get_countries(cookie)
-
-        for country in countries:
-
+        try:
             cookie = self.refresh_cookie()
-            leaders = self.get_leaders(country, cookie)
+            countries = self.get_countries(cookie)
 
-            for leader in leaders:
-                leader_id = leader.get("id")
-                if not leader_id:
-                    # Generate a unique ID if not provided. Fistname-Lastname-birth_date
-                    last_name = leader.get('last_name') or 'Unknown'
-                    birth_date = leader.get('birth_date', 'UnknownDate')
-                    leader_id = f"{leader['first_name']}-{last_name}-{birth_date}".replace(
-                        ' ', '_').lower()
+            for country in countries:
 
-                leader_data = {
-                    # get all the information about the leader
-                    'id': leader.get('id'),
-                    'first_name': leader.get('first_name'),
-                    'last_name': leader.get('last_name'),
-                    'birth_date': leader.get('birth_date'),
-                    'death_date': leader.get('death_date'),
-                    'place_of_birth': leader.get('place_of_birth'),
-                    'wikipedia_url': leader.get('wikipedia_url'),
-                    'start_mandate': leader.get('start_mandate'),
-                    'end_mandate': leader.get('end_mandate'),
-                    # iniciate the function get_first_paragraph that going to return the text screped from wikipedia
-                    'first_paragraph': self.get_first_paragraph(leader.get('wikipedia_url'))
-                }
+                cookie = self.refresh_cookie()
+                leaders = self.get_leaders(country, cookie)
 
-                self.leaders_data[leader_id] = leader_data
-        print(self.leaders_data)
-        return self.leaders_data
+                for leader in leaders:
+                    leader_id = leader.get("id")
+                    if not leader_id:
+                        # Generate a unique ID if not provided. Fistname-Lastname-birth_date
+                        last_name = leader.get('last_name') or 'Unknown'
+                        birth_date = leader.get('birth_date', 'UnknownDate')
+                        leader_id = f"{leader['first_name']}-{last_name}-{birth_date}".replace(
+                            ' ', '_').lower()
 
-    def to_csv(self, data: dict, save='data.csv'):
-        self.data = data
-        self.save = save
-        dataframe = pd.DataFrame(self.data)
-        dataframe.to_csv(self.save, index=False)
+                    leader_data = {
+                        # get all the information about the leader
+                        'id': leader.get('id'),
+                        'first_name': leader.get('first_name'),
+                        'last_name': leader.get('last_name'),
+                        'birth_date': leader.get('birth_date'),
+                        'death_date': leader.get('death_date'),
+                        'place_of_birth': leader.get('place_of_birth'),
+                        'wikipedia_url': leader.get('wikipedia_url'),
+                        'start_mandate': leader.get('start_mandate'),
+                        'end_mandate': leader.get('end_mandate'),
+                        # iniciate the function get_first_paragraph that going to return the text screped from wikipedia
+                        'first_paragraph': self.get_first_paragraph(leader.get('wikipedia_url'))
+                    }
+
+                    self.leaders_data[leader_id] = leader_data
+            print(self.leaders_data)
+            return self.leaders_data
+
+        except requests.RequestException as error:
+            print(f"Um erro ocorreu: {error}")
+            return None
+
+    def to_csv(self, data: dict, save='data.csv') -> None:
+        try:
+            self.data = data
+            self.save = save
+            dataframe = pd.DataFrame(self.data)
+            dataframe.to_csv(self.save, index=False)
+
+        except requests.RequestException as error:
+            print(f"Um erro ocorreu: {error}")
+            return None
 
     def get_everyone_session(self) -> dict:
-        session = requests.Session()
-        session.get(self.base_url+self.cookies_endpoint)
-
-        countries = session.get(self.base_url+self.country_endpoint)
-        print(f"Countries: {countries.text}")
-
-        for country in countries.json():
+        try:
+            session = requests.Session()
             session.get(self.base_url+self.cookies_endpoint)
-            print(country)
-            leaders = session.get(
-                self.base_url+self.leaders_endpoint, params={"country": country})
-            for leader in leaders.json():
-                print(leader)
-                leader_id = leader.get("id")
-                if not leader_id:
-                    # Generate a unique ID if not provided. Fistname-Lastname-birth_date
-                    last_name = leader.get('last_name') or 'Unknown'
-                    birth_date = leader.get('birth_date', 'UnknownDate')
-                    leader_id = f"{leader['first_name']}-{last_name}-{birth_date}".replace(
-                        ' ', '_').lower()
 
-                leader_data = {
-                    # get all the information about the leader
-                    'id': leader.get('id'),
-                    'first_name': leader.get('first_name'),
-                    'last_name': leader.get('last_name'),
-                    'birth_date': leader.get('birth_date'),
-                    'death_date': leader.get('death_date'),
-                    'place_of_birth': leader.get('place_of_birth'),
-                    'wikipedia_url': leader.get('wikipedia_url'),
-                    'start_mandate': leader.get('start_mandate'),
-                    'end_mandate': leader.get('end_mandate'),
-                    # iniciate the function get_first_paragraph that going to return the text screped from wikipedia
-                    'first_paragraph': self.get_first_paragraph(leader.get('wikipedia_url'))
-                }
-                self.leaders_data[leader_id] = leader_data
-        print(self.leaders_data)
-        return self.leaders_data
+            countries = session.get(self.base_url+self.country_endpoint)
+
+            for country in countries.json():
+                threading.Thread(target=session.get, args=(
+                    self.base_url+self.cookies_endpoint,))
+                print(country)
+                leaders = session.get(
+                    self.base_url+self.leaders_endpoint, params={"country": country})
+                for leader in leaders.json():
+                    threading.Thread(
+                        target=self.get_data_leader, args=(leader,)).start()
+
+            print(self.leaders_data)
+            return self.leaders_data
+
+        except requests.RequestException as error:
+            print(f"Um erro ocorreu: {error}")
+            return None
+
+    def get_data_leader(self, leader):
+        leader_id = leader.get("id")
+        if not leader_id:
+            # Generate a unique ID if not provided. Fistname-Lastname-birth_date
+            last_name = leader.get('last_name') or 'Unknown'
+            birth_date = leader.get('birth_date', 'UnknownDate')
+            leader_id = f"{leader['first_name']}-{last_name}-{birth_date}".replace(
+                ' ', '_').lower()
+
+        leader_data = {
+            # get all the information about the leader
+            'id': leader.get('id'),
+            'first_name': leader.get('first_name'),
+            'last_name': leader.get('last_name'),
+            'birth_date': leader.get('birth_date'),
+            'death_date': leader.get('death_date'),
+            'place_of_birth': leader.get('place_of_birth'),
+            'wikipedia_url': leader.get('wikipedia_url'),
+            'start_mandate': leader.get('start_mandate'),
+            'end_mandate': leader.get('end_mandate'),
+            # iniciate the function get_first_paragraph that going to return the text screped from wikipedia
+            'first_paragraph': self.get_first_paragraph(leader.get('wikipedia_url'))
+        }
+        self.leaders_data[leader_id] = leader_data

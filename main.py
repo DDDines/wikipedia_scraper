@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # scrapper.get_everyone()
     # scrapper.to_json_file("data.json")
     # scrapper.to_csv(scrapper.get_everyone())
-
+    # scrapper.to_json_file(scrapper.get_everyone())
     scrapper.to_csv(scrapper.get_everyone_session())
 
     print("Finish!")
