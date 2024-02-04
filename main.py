@@ -1,4 +1,6 @@
 # import src.utils as utils
+import threading
+
 from src.scraper import WikipediaScraper
 
 
@@ -16,7 +18,8 @@ if __name__ == "__main__":
     scrapper = WikipediaScraper("https://country-leaders.onrender.com")
     # scrapper.get_everyone()
     # scrapper.to_json_file("data.json")
-    dicionario = scrapper.get_everyone()
-    scrapper.to_csv(dicionario)
+    # scrapper.to_csv(scrapper.get_everyone())
+
+    scrapper.to_csv(scrapper.get_everyone_session())
 
     print("Finish!")

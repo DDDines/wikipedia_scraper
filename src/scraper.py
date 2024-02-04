@@ -3,6 +3,7 @@ import json
 from bs4 import BeautifulSoup
 import re
 import pandas as pd
+import threading
 
 
 class WikipediaScraper:
@@ -108,6 +109,7 @@ class WikipediaScraper:
         countries = self.get_countries(cookie)
 
         for country in countries:
+
             cookie = self.refresh_cookie()
             leaders = self.get_leaders(country, cookie)
 
@@ -139,7 +141,48 @@ class WikipediaScraper:
         print(self.leaders_data)
         return self.leaders_data
 
-    def to_csv(self, data: dict):
+    def to_csv(self, data: dict, save='data.csv'):
         self.data = data
+        self.save = save
         dataframe = pd.DataFrame(self.data)
-        dataframe.to_csv('data.csv', index=False)
+        dataframe.to_csv(self.save, index=False)
+
+    def get_everyone_session(self) -> dict:
+        session = requests.Session()
+        session.get(self.base_url+self.cookies_endpoint)
+
+        countries = session.get(self.base_url+self.country_endpoint)
+        print(f"Countries: {countries.text}")
+
+        for country in countries.json():
+            session.get(self.base_url+self.cookies_endpoint)
+            print(country)
+            leaders = session.get(
+                self.base_url+self.leaders_endpoint, params={"country": country})
+            for leader in leaders.json():
+                print(leader)
+                leader_id = leader.get("id")
+                if not leader_id:
+                    # Generate a unique ID if not provided. Fistname-Lastname-birth_date
+                    last_name = leader.get('last_name') or 'Unknown'
+                    birth_date = leader.get('birth_date', 'UnknownDate')
+                    leader_id = f"{leader['first_name']}-{last_name}-{birth_date}".replace(
+                        ' ', '_').lower()
+
+                leader_data = {
+                    # get all the information about the leader
+                    'id': leader.get('id'),
+                    'first_name': leader.get('first_name'),
+                    'last_name': leader.get('last_name'),
+                    'birth_date': leader.get('birth_date'),
+                    'death_date': leader.get('death_date'),
+                    'place_of_birth': leader.get('place_of_birth'),
+                    'wikipedia_url': leader.get('wikipedia_url'),
+                    'start_mandate': leader.get('start_mandate'),
+                    'end_mandate': leader.get('end_mandate'),
+                    # iniciate the function get_first_paragraph that going to return the text screped from wikipedia
+                    'first_paragraph': self.get_first_paragraph(leader.get('wikipedia_url'))
+                }
+                self.leaders_data[leader_id] = leader_data
+        print(self.leaders_data)
+        return self.leaders_data
